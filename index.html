@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kviz aplikacija</title>
+  <style>
+    .question {
+      margin-bottom: 20px;
+    }
+
+    .options {
+      list-style-type: none;
+      padding-left: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="quiz-container"></div>
+
+  <script>
+    function generateQuiz() {
+      fetch('https://www.link-elearning.com/linkdl/coursefiles/1470/quiz.json')
+        .then(response => response.json())
+        .then(data => {
+          const quizData = data.quiz;
+          const quizContainer = document.getElementById('quiz-container');
+          let html = '';
+
+          quizData.forEach((question, index) => {
+            html += `<div class="question">
+                        <h4>${index + 1}. ${question.question}</h4>
+                        <ul class="options">`;
+
+            question.options.forEach(option => {
+              html += `<li>
+                          <input type="checkbox" id="${option.id}" name="question${index + 1}" value="${option.value}">
+                          <label for="${option.id}">${option.text}</label>
+                        </li>`;
+            });
+
+            html += `</ul></div>`;
+          });
+
+          quizContainer.innerHTML = html;
+
+          quizData.forEach((question, index) => {
+            const savedAnswers = localStorage.getItem(`question${index + 1}`);
+
+            if (savedAnswers) {
+              const answers = savedAnswers.split(',');
+
+              answers.forEach(answer => {
+                const checkbox = document.getElementById(answer);
+                if (checkbox) {
+                  checkbox.checked = true;
+                }
+              });
+            }
+          });
+
+          quizContainer.addEventListener('change', event => {
+            const checkbox = event.target;
+
+            if (checkbox.type === 'checkbox') {
+              const questionNumber = checkbox.name.substring(8);
+              const savedAnswers = localStorage.getItem(`question${questionNumber}`);
+
+              if (checkbox.checked) {
+                if (savedAnswers) {
+                  const answers = savedAnswers.split(',');
+                  if (!answers.includes(checkbox.value)) {
+                    answers.push(checkbox.value);
+                  }
+                  localStorage.setItem(`question${questionNumber}`, answers.join(','));
+                } else {
+                  localStorage.setItem(`question${questionNumber}`, checkbox.value);
+                }
+              } else {
+                if (savedAnswers) {
+                  const answers = savedAnswers.split(',');
+                  const updatedAnswers = answers.filter(answer => answer !== checkbox.value);
+                  localStorage.setItem(`question${questionNumber}`, updatedAnswers.join(','));
+                }
+              }
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Došlo je do greške prilikom preuzimanja ili parsiranja JSON podataka:', error);
+        });
+    }
+
+    generateQuiz();
+  </script>
+</body>
+</html>
